@@ -31,8 +31,8 @@ provider "azurerm" {
 ################################################
 # Resource Group (Dev)
 ################################################
-resource "azurerm_resource_group" "terra-rg-dev" {
-  name     = "terra-rg-dev"
+resource "azurerm_resource_group" "terra-rg" {
+  name     = var.resource_group_name
   location = "West US"
 
   tags = {
@@ -43,11 +43,11 @@ resource "azurerm_resource_group" "terra-rg-dev" {
 ################################################
 # AKS Cluster (Dev)
 ################################################
-resource "azurerm_kubernetes_cluster" "terra-aks-dev" {
-  name                = "terra-aks-dev"
+resource "azurerm_kubernetes_cluster" "terra-aks" {
+  name                = ${azure_resource_group.terra-rg.name}
   location            = azurerm_resource_group.terra-rg-dev.location
   resource_group_name = azurerm_resource_group.terra-rg-dev.name
-  dns_prefix          = "terra-aks-dev01-develop"
+  dns_prefix          = ${azure_resource_group.terra-rg.name}-aksdeccan
   kubernetes_version  = "1.30.6"  # example valid version
 
   default_node_pool {
@@ -64,7 +64,7 @@ resource "azurerm_kubernetes_cluster" "terra-aks-dev" {
   }
 
   tags = {
-    Environment = "Dev"
+    Environment = azure_resource_group.name
   }
 }
 
@@ -112,8 +112,8 @@ resource "azurerm_kubernetes_cluster" "terra-aks-dev" {
 ################################################
 # Output (kube_config)
 ################################################
-output "kube_config_dev" {
-  description = "Raw kubeconfig for dev AKS cluster"
-  value       = azurerm_kubernetes_cluster.terra-aks-dev.kube_config_raw
-  sensitive   = true
-}
+# output "kube_config_dev" {
+#   description = "Raw kubeconfig for  AKS cluster"
+#   value       = azurerm_kubernetes_cluster.terra-aks-dev.kube_config_raw
+#   sensitive   = true
+# }

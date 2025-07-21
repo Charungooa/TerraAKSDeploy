@@ -21,3 +21,9 @@ variable "AZURE_TENANT_ID" {
   type        = string
   description = "Azure tenant ID"
 }
+
+variable "resource_group_name" {
+  type        = string
+  description = "Name of the Azure Resource Group"
+  default     = "terra-rg-00"
+}
