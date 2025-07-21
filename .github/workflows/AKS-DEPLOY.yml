@@ -56,13 +56,13 @@ jobs:
         working-directory: ${{ inputs.ENVIRONMENT }}  # Runs in Dev/, Prod/, or Stage/
         run: |
           terraform init
-          terraform plan -out=tfplan
+          terraform plan -out=tfplan -state=${{ env.STATE_FILE }}
       
       # Terraform Apply
       - name: Terraform Apply
         working-directory: ${{ inputs.ENVIRONMENT }}  # Runs in Dev/, Prod/, or Stage/
         run: |
-          terraform apply -auto-approve tfplan
+          terraform apply -auto-approve tfplan  -state=${{ env.STATE_FILE }}
           echo "Terraform apply completed successfully."
       # Upload Terraform state file as an artifact to github
       - name: Upload Terraform State
