@@ -53,7 +53,7 @@ jobs:
           echo "Terraform apply completed successfully."
       # Upload Terraform state file as an artifact to github
       - name: Upload Terraform State
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: terraform-state
           path: ./*.tfstate
