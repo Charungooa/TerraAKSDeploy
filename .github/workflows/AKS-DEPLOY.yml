@@ -12,6 +12,15 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      ENVIRONMENT:
+        description: 'Environment to deploy (dev, prod, stage)'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+          - stage
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -20,7 +29,7 @@ jobs:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     env:
-      STATE_FILE: "${{github.repository.name}}.tfstate"
+      STATE_FILE: "${{ inputs.ENVIRONMENT }}.tfstate"
       TF_VAR_AZURE_CLIENT_ID: ${{secrets.AZURE_CLIENT_ID }}
       TF_VAR_AZURE_CLIENT_SECRET: ${{secrets.AZURE_CLIENT_SECRET }}
       TF_VAR_AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID }}
@@ -42,12 +51,14 @@ jobs:
       
       # Terraform Plan
       - name: Terraform Plan
+        working-directory: ${{ inputs.ENVIRONMENT }}  # Runs in Dev/, Prod/, or Stage/
         run: |
           terraform init
           terraform plan -out=tfplan
       
       # Terraform Apply
       - name: Terraform Apply
+        working-directory: ${{ inputs.ENVIRONMENT }}  # Runs in Dev/, Prod/, or Stage/
         run: |
           terraform apply -auto-approve tfplan
           echo "Terraform apply completed successfully."
@@ -55,5 +66,5 @@ jobs:
       - name: Upload Terraform State
         uses: actions/upload-artifact@v4
         with:
-            name: terraform-state-${{ github.event.repository.name }}
-            path: ${{ env.STATE_FILE }}
+          name: terraform-state-${{ inputs.ENVIRONMENT }}  # Environment-specific artifact name
+          path: ${{ inputs.ENVIRONMENT }}/${{ env.STATE_FILE }}  # Path to the state file in the subdirectory
