@@ -45,8 +45,8 @@ resource "azurerm_resource_group" "terra-rg" {
 ################################################
 resource "azurerm_kubernetes_cluster" "terra-aks" {
   name                = azurerm_resource_group.terra-rg.name
-  location            = azurerm_resource_group.terra-rg-dev.location
-  resource_group_name = azurerm_resource_group.terra-rg-dev.name
+  location            = azurerm_resource_group.terra-rg.location
+  resource_group_name = azurerm_resource_group.terra-rg.name
   dns_prefix          = "${azurerm_resource_group.terra-rg.name}-aksdeccan"
   kubernetes_version  = "1.30.6"  # example valid version
 
@@ -64,7 +64,7 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
   }
 
   tags = {
-    Environment = azurerm_resource_group.name
+    Environment = azurerm_resource_group.terra-rg.name
   }
 }
 
