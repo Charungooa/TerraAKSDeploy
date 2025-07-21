@@ -44,10 +44,10 @@ resource "azurerm_resource_group" "terra-rg" {
 # AKS Cluster (Dev)
 ################################################
 resource "azurerm_kubernetes_cluster" "terra-aks" {
-  name                = azure_resource_group.terra-rg.name
+  name                = azurerm_resource_group.terra-rg.name
   location            = azurerm_resource_group.terra-rg-dev.location
   resource_group_name = azurerm_resource_group.terra-rg-dev.name
-  dns_prefix          = "${azure_resource_group.terra-rg.name}-aksdeccan"
+  dns_prefix          = "${azurerm_resource_group.terra-rg.name}-aksdeccan"
   kubernetes_version  = "1.30.6"  # example valid version
 
   default_node_pool {
@@ -64,7 +64,7 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
   }
 
   tags = {
-    Environment = azure_resource_group.name
+    Environment = azurerm_resource_group.name
   }
 }
 
