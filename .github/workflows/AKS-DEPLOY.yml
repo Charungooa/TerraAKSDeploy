@@ -59,25 +59,28 @@ jobs:
         with:
           terraform_version: 1.5.7
 
-      # Download previous Terraform state artifact (if exists)
+      # Check if the state artifact exists in GitHub
+      - name: Check if State Artifact Exists
+        id: check_artifact
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: token ${{ github.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/artifacts?name=terraform-state-${{ inputs.ENVIRONMENT }}&per_page=1)
+          TOTAL=$(echo $RESPONSE | jq '.total_count // 0')
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Download previous Terraform state artifact only if it exists
       - name: Download Terraform State
+        if: steps.check_artifact.outputs.exists == 'true'
         uses: dawidd6/action-download-artifact@v3
         with:
           workflow: Terraform AKS Deploy
           name: terraform-state-${{ inputs.ENVIRONMENT }}
           path: ${{ inputs.ENVIRONMENT }}
-          if_no_artifact: ignore  # Continue if no previous artifact found (e.g., first run)
-
-      # Ensure state file exists (create empty if not present to avoid Terraform errors)
-      - name: Ensure State File Exists
-        run: |
-          STATE_PATH="${{ inputs.ENVIRONMENT }}/${{ env.STATE_FILE }}"
-          if [ ! -f "$STATE_PATH" ]; then
-            echo '{}' > "$STATE_PATH"
-            echo "Created empty state file for first-time run."
-          else
-            echo "State file found."
-          fi
 
       # Terraform Init (local state, no backend)
       - name: Terraform Init
