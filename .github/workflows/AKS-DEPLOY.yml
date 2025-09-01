@@ -78,7 +78,6 @@ jobs:
         if: steps.check_artifact.outputs.exists == 'true'
         uses: dawidd6/action-download-artifact@v3
         with:
-          workflow: Terraform AKS Deploy
           name: terraform-state-${{ inputs.ENVIRONMENT }}
           path: ${{ inputs.ENVIRONMENT }}
 
