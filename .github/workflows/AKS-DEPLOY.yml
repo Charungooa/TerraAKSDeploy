@@ -1,5 +1,4 @@
 # This is a basic workflow to help you get started with Actions
-
 name: Terraform AKS Deploy
 
 # Controls when the workflow will run
@@ -21,7 +20,13 @@ on:
           - Dev
           - Prod
           - Stage
-
+      ACTION:
+        description: 'Action to perform (apply for create/update, destroy for deletion)'
+        required: true
+        type: choice
+        options:
+          - apply
+          - destroy
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -31,42 +36,87 @@ jobs:
     runs-on: ubuntu-latest
     env:
       STATE_FILE: "${{ inputs.ENVIRONMENT }}.tfstate"
-      TF_VAR_AZURE_CLIENT_ID: ${{secrets.AZURE_CLIENT_ID }}
-      TF_VAR_AZURE_CLIENT_SECRET: ${{secrets.AZURE_CLIENT_SECRET }}
-      TF_VAR_AZURE_SUBSCRIPTION_ID: ${{secrets.AZURE_SUBSCRIPTION_ID }}
-      TF_VAR_AZURE_TENANT_ID: ${{secrets.AZURE_TENANT_ID }}
-      TF_VAR_AZURE_CLIENT_OBJECT_ID: ${{secrets.AZURE_CLIENT_OBJECT_ID}}
-      TF_VAR_resource_group_name: ${{ inputs.RESOURCE_GROUP_OVERRIDE || (inputs.ENVIRONMENT == 'dev' && 'dev-rg') ||  (inputs.ENVIRONMENT == 'prod' && 'prod-rg')  || (inputs.ENVIRONMENT == 'stage' && 'stage-rg') }}
-      # Steps represent a sequence of tasks that will be executed as part of the job
+      TF_VAR_AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      TF_VAR_AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      TF_VAR_AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      TF_VAR_AZURE_CLIENT_OBJECT_ID: ${{ secrets.AZURE_CLIENT_OBJECT_ID }}
+      TF_VAR_resource_group_name: ${{ inputs.RESOURCE_GROUP_OVERRIDE || (inputs.ENVIRONMENT == 'Dev' && 'dev-rg') || (inputs.ENVIRONMENT == 'Prod' && 'prod-rg') || (inputs.ENVIRONMENT == 'Stage' && 'stage-rg') }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.x'  # Specify the Python version you need      
+          python-version: '3.x' # Specify the Python version you need
+
       # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.7
-      
+
+      # Check if the state artifact exists in GitHub
+      - name: Check if State Artifact Exists
+        id: check_artifact
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: token ${{ github.token }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/artifacts?name=terraform-state-${{ inputs.ENVIRONMENT }}&per_page=1)
+          TOTAL=$(echo $RESPONSE | jq '.total_count // 0')
+          if [ "$TOTAL" -gt 0 ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Download previous Terraform state artifact only if it exists
+      - name: Download Terraform State
+        if: steps.check_artifact.outputs.exists == 'true'
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: terraform-state-${{ inputs.ENVIRONMENT }}
+          path: ${{ inputs.ENVIRONMENT }}
+
+      # Terraform Init (local state, no backend)
+      - name: Terraform Init
+        working-directory: ${{ inputs.ENVIRONMENT }} # Runs in Dev/, Prod/, or Stage/
+        run: terraform init
+
       # Terraform Plan
       - name: Terraform Plan
-        working-directory: ${{ inputs.ENVIRONMENT }}  # Runs in Dev/, Prod/, or Stage/
-        run: |
-          terraform init
-          terraform plan -state=${{ env.STATE_FILE }}
-      
+        if: inputs.ACTION == 'apply'
+        working-directory: ${{ inputs.ENVIRONMENT }}
+        run: terraform plan -state=${{ env.STATE_FILE }}
+
+      - name: Terraform Plan Destroy
+        if: inputs.ACTION == 'destroy'
+        working-directory: ${{ inputs.ENVIRONMENT }}
+        run: terraform plan -destroy -state=${{ env.STATE_FILE }}
+
       # Terraform Apply
       - name: Terraform Apply
-        working-directory: ${{ inputs.ENVIRONMENT }}  # Runs in Dev/, Prod/, or Stage/
+        if: inputs.ACTION == 'apply'
+        working-directory: ${{ inputs.ENVIRONMENT }}
         run: |
           terraform apply -auto-approve -state=${{ env.STATE_FILE }}
           echo "Terraform apply completed successfully."
-      # Upload Terraform state file as an artifact to github
+
+      # Terraform Destroy
+      - name: Terraform Destroy
+        if: inputs.ACTION == 'destroy'
+        working-directory: ${{ inputs.ENVIRONMENT }}
+        run: |
+          terraform destroy -auto-approve -state=${{ env.STATE_FILE }}
+          echo "Terraform destroy completed successfully."
+
+      # Upload updated Terraform state file as an artifact
       - name: Upload Terraform State
         uses: actions/upload-artifact@v4
         with:
-          name: terraform-state-${{ inputs.ENVIRONMENT }}  # Environment-specific artifact name
-          path: ${{ inputs.ENVIRONMENT }}/${{ env.STATE_FILE }}  # Path to the state file in the subdirectory
+          name: terraform-state-${{ inputs.ENVIRONMENT }} # Environment-specific artifact name
+          path: ${{ inputs.ENVIRONMENT }}/${{ env.STATE_FILE }} # Path to the state file in the subdirectory
+          if-no-files-found: ignore  # After destroy, state might be empty or missing
