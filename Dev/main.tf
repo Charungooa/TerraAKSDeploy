@@ -56,6 +56,8 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
     vm_size         = "Standard_DS2_v2"
     os_disk_size_gb = 30
     type            = "VirtualMachineScaleSets"
+    min_count           = 1
+    max_count           = 5
   }
 
   service_principal {
