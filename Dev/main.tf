@@ -21,7 +21,23 @@ terraform {
 # }
 
 provider "azurerm" {
-  features {}
+  features {
+        # Configure ACR to purge on destroy (no soft-delete)
+    # container_registry {
+    #   purge_soft_delete_on_destroy  = true  # Purge on terraform destroy
+    #   purge_soft_deleted_on_destroy = true  # Also purge existing soft-deleted ACRs
+    # }
+
+    # # Optional: Configure other resource behaviors
+    # resource_group {
+    #   prevent_deletion_if_contains_resources = false
+    # }
+
+    # key_vault {
+    #   purge_soft_delete_on_destroy    = true
+    #   recover_soft_deleted_key_vaults = true
+    # }
+  }
   client_id       = var.AZURE_CLIENT_ID
   client_secret   = var.AZURE_CLIENT_SECRET
   subscription_id = var.AZURE_SUBSCRIPTION_ID
@@ -75,12 +91,15 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
 # Azure Container Registry (Dev)
 ################################################
 resource "azurerm_container_registry" "terra-acr-dev" {
-  name                = "terraacr2025dev" # unique name
+  name                = var.azurerm_container_registry_name # unique name
   resource_group_name = azurerm_resource_group.terra-rg.name
   location            = azurerm_resource_group.terra-rg.location
   sku                 = "Standard"
   admin_enabled       = true
 
+ 
+  
+  # Retain soft-deleted images for 7 days
   tags = {
     Environment = "Dev"
   }

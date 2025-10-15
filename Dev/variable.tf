@@ -27,3 +27,10 @@ variable "resource_group_name" {
   description = "Name of the Azure Resource Group"
   default     = "terra-rg-00"
 }
+
+variable "azurerm_container_registry_name" {
+  type        = string
+  description = "Name of the Azure Container Registry"
+  default     = "terraacr2025dev" # must be globally unique
+  
+}
