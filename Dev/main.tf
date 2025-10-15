@@ -76,8 +76,8 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
 ################################################
 resource "azurerm_container_registry" "terra-acr-dev" {
   name                = "terraacr2025dev" # unique name
-  resource_group_name = azurerm_resource_group.terra-rg-dev.name
-  location            = azurerm_resource_group.terra-rg-dev.location
+  resource_group_name = azurerm_resource_group.terra-rg.name
+  location            = azurerm_resource_group.terra-rg.location
   sku                 = "Standard"
   admin_enabled       = true
 
