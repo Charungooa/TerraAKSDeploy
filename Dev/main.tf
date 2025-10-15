@@ -74,17 +74,17 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
 ################################################
 # Azure Container Registry (Dev)
 ################################################
-# resource "azurerm_container_registry" "terra-acr-dev" {
-#   name                = "terraacr2025dev" # unique name
-#   resource_group_name = azurerm_resource_group.terra-rg-dev.name
-#   location            = azurerm_resource_group.terra-rg-dev.location
-#   sku                 = "Standard"
-#   admin_enabled       = true
+resource "azurerm_container_registry" "terra-acr-dev" {
+  name                = "terraacr2025dev" # unique name
+  resource_group_name = azurerm_resource_group.terra-rg-dev.name
+  location            = azurerm_resource_group.terra-rg-dev.location
+  sku                 = "Standard"
+  admin_enabled       = true
 
-#   tags = {
-#     Environment = "Dev"
-#   }
-# }
+  tags = {
+    Environment = "Dev"
+  }
+}
 
 ################################################
 # (Optional) Azure Container Instance
