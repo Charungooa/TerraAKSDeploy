@@ -64,7 +64,7 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
   location            = azurerm_resource_group.terra-rg.location
   resource_group_name = azurerm_resource_group.terra-rg.name
   dns_prefix          = "${azurerm_resource_group.terra-rg.name}-aksdeccan"
-  kubernetes_version  = "1.30.6"  # example valid version
+  kubernetes_version  = "1.34.1"  # example valid version
 
   default_node_pool {
     name            = "default"
