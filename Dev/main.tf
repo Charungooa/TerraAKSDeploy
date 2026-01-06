@@ -85,6 +85,9 @@ resource "azurerm_kubernetes_cluster" "terra-aks" {
   tags = {
     Environment = azurerm_resource_group.terra-rg.name
   }
+
+  acr_id = azurerm_container_registry.acr.id
+
 }
 
 ################################################
