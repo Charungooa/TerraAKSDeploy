@@ -1,5 +1,3 @@
-# TerraAKSDeploy
-
 # Terraform AKS Deploy
 
 A GitHub Actions workflow for deploying and managing Azure Kubernetes Service (AKS) infrastructure using Terraform with environment-specific configurations.
